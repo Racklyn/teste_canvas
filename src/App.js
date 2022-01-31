@@ -3,6 +3,8 @@ import KeyboardEventHandler from 'react-keyboard-event-handler';
 import './App.css';
 
 import drawUtils from './utils/drawUtils';
+import personUtils from './utils/personUtils';
+//import PersonPng from './assets/person.png'
 
 function App() {
 
@@ -16,19 +18,25 @@ function App() {
   const [side, setSide] = useState(window.innerWidth > window.innerHeight ? window.innerHeight : window.innerWidth)
 
   const [timerController, setTimerController] = useState(true)
-  
+
+  const [counterReps, setCounterReps] = useState(0)
+
   const [personInfo, setPersonInfo] = useState(
     {
-      'width': (side/settings.numberOfBlocks) - 1,
-      'height': (side/settings.numberOfBlocks) - 1,
+      'width': 1.8,
+      'height': 1.8,
+      'imageUrl': require("./assets/person.png"),//"/static/media/person.7f8b14acee38613414ce.png",
       'color': '#D00',
       'xB': 20, //x relativo ao número de blocos [0-40], float
       'yB': 20, //y relativo ao número de blocos [0-40], float
       'dirX': 0,
       'dirY': 0,
+      'lastDirX' : 0,
+      'lastDirY' : 0,
       'startBlockX': 20,
       'startBlockY': 20,
-      'step': 0.3 //quantidade de blocos andados por click (float)
+      'step': 0.4,  //quantidade de blocos andados por click (float)
+      'stepImagePos': 0,
     }
   )
 
@@ -41,8 +49,16 @@ function App() {
     }
 
     setSide(side)
-    let bSide = side/settings.numberOfBlocks
-    let newPersonInfo = {...personInfo,'width': bSide-1, 'height': bSide-1}
+    // let bSide = side/settings.numberOfBlocks
+
+    let newPersonInfo = {...personInfo,'width': 1, 'height': 1}
+    // const image = new Image();
+    // image.src = "https://img.elo7.com.br/product/zoom/3251894/bob-esponja-em-camadas-arquivo-de-corteq-bob-esponja.jpg"
+    // image.onload = () => {
+    //   newPersonInfo.image = image
+    // };
+
+
     setPersonInfo(newPersonInfo)
 
     canvas.width = side * 2
@@ -68,14 +84,22 @@ function App() {
         let stepRel = personInfo.step
         if (personInfo.dirX!==0 && personInfo.dirY!==0) stepRel /= Math.sqrt(2)
 
-        let newPersonInfo = {
-            ...personInfo,
-            'yB': personInfo.yB + ((side/settings.numberOfBlocks) * stepRel * personInfo.dirY),
-            'xB': personInfo.xB + ((side/settings.numberOfBlocks) * stepRel * personInfo.dirX),
+        let newPersonInfo = personUtils.endOfTheBoardVerification(personInfo, side, settings.numberOfBlocks, stepRel)
+
+        if (counterReps%5==0){
+          if (newPersonInfo.stepImagePos >= 2 || (newPersonInfo.dirX==0 && newPersonInfo.dirY==0)){
+            newPersonInfo.stepImagePos=0
+          }else {
+            newPersonInfo.stepImagePos++
+          }
         }
+        
+
         drawUtils.clearAndRedraw(contextRef.current, settings.numberOfBlocks, side, "#556", "#778", newPersonInfo)
         setPersonInfo(newPersonInfo)
         setTimerController(!timerController)
+
+        setCounterReps(counterReps+1)
     }, 20)
   },[timerController])
 
@@ -87,21 +111,29 @@ function App() {
     switch (key) {
       case "up":
         newPersonInfo.dirY = -1
+        newPersonInfo.lastDirY = -1
+        if(personInfo.dirX==0) newPersonInfo.lastDirX = 0
         //setPersonInfo({...personInfo, 'dirY': -1})
         //setPersonInfo({...personInfo, 'y': personInfo.y - (personInfo.step)})
         break;
       case "right":
         newPersonInfo.dirX = 1
+        newPersonInfo.lastDirX = 1
+        if(personInfo.dirY==0) newPersonInfo.lastDirY = 0
         //setPersonInfo({...personInfo, 'dirX': 1})
         //setPersonInfo({...personInfo, 'x': personInfo.x + (personInfo.step)})
         break;
       case "left":
         newPersonInfo.dirX = -1
+        newPersonInfo.lastDirX = -1
+        if(personInfo.dirY==0) newPersonInfo.lastDirY = 0
         //setPersonInfo({...personInfo, 'dirX': -1})
         //setPersonInfo({...personInfo, 'x': personInfo.x - (personInfo.step)})
         break;
       case "down":
         newPersonInfo.dirY = 1
+        newPersonInfo.lastDirY = 1
+        if(personInfo.dirX==0) newPersonInfo.lastDirX = 0
         //setPersonInfo({...personInfo, 'dirY': 1})
         //setPersonInfo({...personInfo, 'y': personInfo.y + (personInfo.step)})
         break;
